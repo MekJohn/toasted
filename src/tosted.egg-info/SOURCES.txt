@@ -1,0 +1,9 @@
+LICENCE
+README.md
+pyproject.toml
+src/toasted/__init__.py
+src/toasted/toasted.py
+src/tosted.egg-info/PKG-INFO
+src/tosted.egg-info/SOURCES.txt
+src/tosted.egg-info/dependency_links.txt
+src/tosted.egg-info/top_level.txt
