@@ -282,6 +282,9 @@ class Toast:
 
     def __init__(self, document = None, app_id: str = "Python"):
         # init the main document content
+        # TODO init should be manage simple empty tree
+        # TODO init shold be manage the correct order of nodes:
+        #       - all input should be placed before all action
         self.xml = document if isinstance(document, Tree) else Tree("toast")
 
         # default toast settings functionality
@@ -656,28 +659,31 @@ class Toast:
 
     @staticmethod
     def InputBox(tag: str, placeholder: str = "...") -> Element:
-        # TODO sembra che tutto si incentrato in una sorta di registrazione app in windows
-        # struttata per avviare e comunicare con l app.
         # init the element
         inputbox = Element("input")
         inputbox.set("type", "text")
         # set default attributes
         inputbox.set("id", tag)
         inputbox.set("activationType", "protocol")
-        inputbox.set("arguments", f"http:{placeholder}")
+        inputbox.set("arguments", f"http:{tag}")
         # set specific attributes
         inputbox.set("placeHolderContent", placeholder)
         return inputbox
 
     @staticmethod
     def Selection(key: str, value: str) -> Element:
+        """
+        Create selection option to be append in a Toast.SelectionBox.
+        Need a pair key, value.
+        """
         selection = Element("selection")
         selection.set("id", key)
         selection.set("content", value)
         return selection
 
     @staticmethod
-    def SelectionBox(*selections: str, name: str = "SelectionBox", label: str = "", default: int = 0) -> Element:
+    def SelectionBox(*selections: str | tuple, name: str = "SelectionBox",
+                     label: str = "", default: int = 0) -> Element:
         # init the element
         selectbox = Element("input")
         selectbox.set("type", "selection")
@@ -695,7 +701,7 @@ class Toast:
             option = Toast.Selection(str(idn), label)
             selectbox.append(option)
         # set the default
-        selectbox.set("defaultInput", selections[default][0])
+        selectbox.set("defaultInput", str(selections[default][0]))
         return selectbox
 
 
@@ -861,28 +867,32 @@ binding = Toast.Binding()
 text1 = Toast.Text("Conf Room 2001 / Building 135")
 text2 = Toast.Text("10:00 AM - 10:30 AM")
 
-source = r"C:\Users\gaudi\Desktop\projects\refinery\src\gui\image_png.png"
-image = Toast.Image(f"{source}", position="appLogoOverride", rounded=True)
-# TODO non va  qalòcosa
+source = r"C:\Users\gaudi\Desktop\projects\tosted\img.png"
+image = Toast.Image(source, position="appLogoOverride", rounded=True)
+
 actions = Toast.Actions()
+inp = Toast.InputBox("textBox")
 menu = Toast.Context("Premi per uscire")
-butt = Toast.Button("Ok", tip="clicca", color="g", inputbox="ins2")
+butt = Toast.Button("Ok", tip="clicca", inputbox="ins2")
 butt2 = Toast.Button("Send", tip="send", color="g")
 butt3 = Toast.Button("Cancel", tip="clicca", color="r")
-#inp = Toast.InputBox("ins2")
-sel = Toast.SelectionBox(("uno", "due"))
+
+sel = Toast.SelectionBox("uno", "due")
 audio = Toast.Audio("alarm3")
 
 binding.extend([text1, text2, image])
 visual.append(binding)
 toast.append(audio)
 toast.append(visual)
+actions.append(inp)
 actions.append(menu)
-# actions.append(inp)
-actions.append(sel)
-# actions.append(butt)
-# actions.append(butt2)
-# actions.append(butt3)
+
+
+#actions.append(sel)
+actions.append(butt)
+actions.append(butt2)
+actions.append(butt3)
+
 
 toast.append(actions)
 
