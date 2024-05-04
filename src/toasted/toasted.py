@@ -30,6 +30,38 @@ class Element(xe.Element):
         super().__init__(tag, **attributes)
         self.text = text
 
+    @property
+    def indented(self):
+        # get xml string and send it to the parser
+        str_tree = str(self)
+        temp_element = xe.XML(str_tree)
+        # indent it and cast in string
+        xe.indent(temp_element)
+        indented_xml = xe.tostring(temp_element, encoding="unicode")
+        return indented_xml
+
+    @property
+    def children(self) -> list[str]:
+        children = list()
+        for sub in self.iterfind("./"):
+            children.append(sub.tag)
+        return children
+
+    @classmethod
+    def fromstring(cls, string):
+        # TODO finire
+        elem = xe.fromstring(string)
+        is_parent = True if len(list(elem.iterfind(elem.tag))) > 0 else False
+        if is_parent:
+            for child in elem.iterfind(elem.tag):
+                elem.append(Element.fromstring(xe.tostring(elem)))
+        else:
+            elem.append(cls(elem.tag, text=elem.text, **elem.attrib))
+
+
+
+
+
     @classmethod
     def from_Wxml(cls, element: wx.XmlElement):
         """
@@ -40,21 +72,34 @@ class Element(xe.Element):
         attributes = element.attributes
         return cls(tag, text=text, **attributes)
 
+    def listchildren(self):
+        """
+        Yield one child element at a time
+        """
+        for child in self.children:
+            xpath = "./" + child
+            yield self.find(xpath)
 
-    @classmethod
-    def from_str(cls, xml: str):
-        document = xe.ElementTree.parse(xml)
-        return document
+    def is_parent(self):
+        return False if self.children == [] else True
 
-    @property
-    def indented(self):
-        # get xml string and send it to the parser
-        str_tree = str(self)
-        temp_element = xe.XML(str_tree)
-        # indent it and cast in string
-        xe.indent(temp_element)
-        indented_xml = xe.tostring(temp_element, encoding="unicode")
-        return indented_xml
+    def copy(self):
+        string = str(self)
+        copied = Element(string)
+        return copied
+
+    def delete(self, xpath: str, *only: int):
+        """
+        Delete children elements
+        """
+        children = self.findall(xpath)
+        trash = list()
+        for i, elem in enumerate(children):
+            # delete only indicated elements
+            if i in only or only == []:
+                trash.append(elem.copy())
+                self.remove(elem)
+        return trash
 
     def __str__(self):
         # get indented string xml
@@ -110,6 +155,16 @@ class Tree(xe.ElementTree):
         """
         return self.getroot()
 
+    @classmethod
+    def read(cls, path: str):
+        document = cls.parse(path)
+        return cls(document)
+
+    @classmethod
+    def fromstring(string: str):
+        pass
+
+
     def set(self, node: str, key: str, value: str):
         """
         Set attributes to the first node tag or to the specified node path
@@ -119,6 +174,20 @@ class Tree(xe.ElementTree):
         node = self.root if node is None else node
         node.set(key, value)
         return node
+
+    def delete(self, xpath: str, *only: int):
+        """
+        Delete children nodes
+        """
+        nodes = self.findall(xpath)
+        trash = list()
+        for i, node in enumerate(nodes):
+            # delete only indicated nodes
+            if i in only or only == []:
+                trash.append(node.copy())
+                self.root.remove(node)
+        return trash
+
 
     def move(self, from_path: str, to_path: str):
         """
