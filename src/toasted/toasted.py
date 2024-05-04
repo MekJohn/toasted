@@ -378,6 +378,7 @@ class Toast:
         print(subs_number.value)
         return notification
 
+
     def subscription(self, notification, user_response):
         """
         Handler function that subscribe the app to user events.
