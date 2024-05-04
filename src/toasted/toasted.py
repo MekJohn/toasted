@@ -703,7 +703,6 @@ class Toast:
             Image dimensions are 48x48 pixels at 100% scaling. We generally recommend providing a
             version each icon asset for each scale factor: 100%, 125%, 150%, 200%, and 400%.
 
-
         - rounded:
             Microsoft style guidelines recommend representing profile pictures with
             a circular image to provide a consistent representation of people across apps
