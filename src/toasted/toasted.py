@@ -103,14 +103,34 @@ class Tree(xe.ElementTree):
         indented_xml = xe.tostring(temp_element_tree, encoding="unicode")
         return indented_xml
 
-    def set(self, key: str, value: str, node: str = "root"):
+    @property
+    def root(self):
+        """
+        Get the entire root element
+        """
+        return self.getroot()
+
+    def set(self, node: str, key: str, value: str):
         """
         Set attributes to the first node tag or to the specified node path
         """
-        root = self.getroot()
+        root = self.root
         node = root if node == root.tag else self.find(node)
-        node = self.getroot() if node is None else node
+        node = self.root if node is None else node
         node.set(key, value)
+        return node
+
+    def move(self, from_path: str, to_path: str):
+        """
+        Move element
+        """
+        # TODO da finire
+        parent, element = from_path.rsplit("/", 1)
+        copied = parent.copy()
+        parent.remove(from_path)
+
+
+
 
     def __str__(self):
         # get indented string xml
@@ -270,6 +290,7 @@ class Toast:
     """
 
     DEFAULT_APPID: str = "Python"
+    ROOT: str = "toast"
 
     PRIORITY_LOW: int = 0
     PRIORITY_HIGH: int = 1
@@ -288,11 +309,11 @@ class Toast:
         self.xml = document if isinstance(document, Tree) else Tree("toast")
 
         # default toast settings functionality
-        self.xml.set("launch", "http:")
-        self.xml.set("activationType", "protocol")
+        self.xml.set(self.ROOT, "launch", "http:")
+        self.xml.set(self.ROOT, "activationType", "protocol")
         self.timestamp()
 
-        self.xml.set("useButtonStyle", "true")
+        self.xml.set(self.ROOT, "useButtonStyle", "true")
         # self.xml.set("scenario", "incomingCall") # fa una breve musichetta tipo suoneria
 
         self.id = 0             # id number is needed when you want to group similar toasts
@@ -311,6 +332,29 @@ class Toast:
         self.exipire_on_time = 1200
         self.manager = wn.ToastNotificationManager
         self.app_id: str = "Python" if app_id is None else app_id
+
+
+    @property
+    def visual(self):
+        """
+        Get visual element
+        """
+        return self.xml.find("./visual")
+
+    @property
+    def binding(self):
+        """
+        Get binding element
+        """
+        return self.xml.find("./visual/binding")
+
+
+    @property
+    def actions(self):
+        """
+        Get actions element
+        """
+        return self.xml.find("./actions")
 
 
     @property
@@ -480,7 +524,7 @@ class Toast:
         """
         time = dt.datetime.now() if datetime == "" else dt.datetime.fromisoformat(datetime)
         stamp = time.strftime("%Y-%m-%dT%H:%M:%S") + timezone
-        self.xml.set("displayTimestamp", stamp, node="toast")
+        self.xml.set(self.ROOT, "displayTimestamp", stamp)
         return time
 
 
@@ -644,13 +688,62 @@ class Toast:
 
     @staticmethod
     def Image(source: str, position: str = None, rounded: bool = None) -> Element:
+        """
+
+        By default, images are displayed inline, after any text elements, filling the full
+        width of the visual area.
+
+        - logo:
+            Specifying a placement value of "appLogoOverride" will cause the image to be displayed
+            in a square on the left side of the visual area. The name of this property reflects
+            the behavior in previous versions of Windows, where the image would replace the default
+            app logo image. In Windows 11, the app logo is displayed in the attribution area, so it
+            is not overridden by the appLogoOverride image placement.
+
+            Image dimensions are 48x48 pixels at 100% scaling. We generally recommend providing a
+            version each icon asset for each scale factor: 100%, 125%, 150%, 200%, and 400%.
+
+
+        - rounded:
+            Microsoft style guidelines recommend representing profile pictures with
+            a circular image to provide a consistent representation of people across apps
+            and the shell. Set the HintCrop property to Circle to render the image with a
+            circular crop.
+
+        - hero:
+            New in Anniversary Update: App notifications can display a hero image, which
+            is a featured ToastGenericHeroImage displayed prominently within the toast banner
+            and while inside Notification Center. Image dimensions are 364x180 pixels at
+            100% scaling.
+
+        Image size restrictions.
+        The images you use in your toast notification can be sourced from:
+
+            - http://
+            - ms-appx:///
+            - ms-appdata:///
+
+        For http and https remote web images, there are limits on the file size of each
+        individual image. In the Fall Creators Update (16299), we increased the limit to be
+        3 MB on normal connections and 1 MB on metered connections. Before that, images were
+        always limited to 200 KB.
+
+            - Normal connection               3 MB
+            - Metered connection              1 MB
+            - Before Fall Creators Update     220 KB
+
+        If an image exceeds the file size, or fails to download, or times out, the image
+        will be dropped and the rest of the notification will be displayed.
+
+        """
+
         # create element and set default attributes
         image = Element("image")
         image.set("src", source)
         # set image type
         if position == "hero":
             image.set("placement", "hero")
-        elif position == "appLogoOverride":
+        elif position in ("logo", "appLogoOverride"):
             image.set("placement", "appLogoOverride")
             if rounded is True:
                 image.set("hint-crop", "circle")
