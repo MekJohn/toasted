@@ -15,7 +15,9 @@ pip install toasted
 ```python
 import toastes as ts
 
-ts.Reminder("Hi. Please call me")
+reminder_toast = ts.Reminder("Hi. Please call me")
+reminder_toast.send()
+
 ```
 
 
