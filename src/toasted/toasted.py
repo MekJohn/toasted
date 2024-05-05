@@ -10,7 +10,6 @@ See at: https: //learn.microsoft.com/en-us/windows/apps/design/
 import os as os
 import datetime as dt
 import platform as pt
-import enum as en
 
 # xml document packages
 from xml.etree import ElementTree as xe
@@ -48,18 +47,27 @@ class Element(xe.Element):
         return children
 
     @classmethod
-    def fromstring(cls, string):
-        # TODO finire
-        elem = xe.fromstring(string)
-        is_parent = True if len(list(elem.iterfind(elem.tag))) > 0 else False
+    def fromstring(cls, string: str):
+        """
+        Get Element with its subelement from string.
+        This classmethod is needed in order to implement string management outside the init method.
+        """
+        # TODO Maybe is there an alternative way to natively implement the xe.fromstring into Element class?
+        # call fromstring method from the ElementTree class
+        raw = xe.fromstring(string)
+        # search for subelements
+        subelements = list(raw.iterfind("./"))
+        is_parent = True if len(subelements) > 0 else False
+        # if the element has children recursevly call method until build the entire element tree
         if is_parent:
-            for child in elem.iterfind(elem.tag):
-                elem.append(Element.fromstring(xe.tostring(elem)))
+            parent = cls(raw.tag, text=raw.text, **raw.attrib)
+            for sub in subelements:
+                sub_string = xe.tostring(sub)
+                child = Element.fromstring(sub_string)
+                parent.append(child)
+            return parent
         else:
-            elem.append(cls(elem.tag, text=elem.text, **elem.attrib))
-
-
-
+            return cls(raw.tag, text=raw.text, **raw.attrib)
 
 
     @classmethod
@@ -85,7 +93,7 @@ class Element(xe.Element):
 
     def copy(self):
         string = str(self)
-        copied = Element(string)
+        copied = Element.fromstring(string)
         return copied
 
     def delete(self, xpath: str, *only: int):
@@ -133,8 +141,7 @@ class Tree(xe.ElementTree):
                     default_tag = Element(source[:10])
                     super().__init__(default_tag)
         else:
-            # if is None or whatever init
-            # a default tag empty element
+            # if is None or whatever init enmpty tree
             root = Element("root")
             super().__init__(root)
 
@@ -156,13 +163,14 @@ class Tree(xe.ElementTree):
         return self.getroot()
 
     @classmethod
+    def fromstring(cls, string: str):
+        tree: Element = Element.fromstring(string)
+        return cls(tree)
+
+    @classmethod
     def read(cls, path: str):
         document = cls.parse(path)
         return cls(document)
-
-    @classmethod
-    def fromstring(string: str):
-        pass
 
 
     def set(self, node: str, key: str, value: str):
@@ -174,6 +182,16 @@ class Tree(xe.ElementTree):
         node = self.root if node is None else node
         node.set(key, value)
         return node
+
+    def descend(self, xpath: str):
+        parent_xpath = xpath.rsplit("/", 1)[0]
+        # element = self.find(xpath)
+        # parent = self.find(parent_xpath)
+        # child = element.copy()
+        # parent.remove(child)
+        return parent_xpath
+
+
 
     def delete(self, xpath: str, *only: int):
         """
@@ -188,15 +206,6 @@ class Tree(xe.ElementTree):
                 self.root.remove(node)
         return trash
 
-
-    def move(self, from_path: str, to_path: str):
-        """
-        Move element
-        """
-        # TODO da finire
-        parent, element = from_path.rsplit("/", 1)
-        copied = parent.copy()
-        parent.remove(from_path)
 
 
 
@@ -1061,8 +1070,10 @@ toast.append(actions)
 xml = Tree(toast)
 
 t = Toast(xml)
-t.send()
 a = Toast.IncomingCall()
 b = Toast.Reminder()
 # TODO b esce testo non richiesto
 
+xml = str(t.xml)
+
+elem = Element.fromstring(xml)
