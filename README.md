@@ -11,6 +11,7 @@ pip install toasted
 ## Usage
 
 ### Fast toast
+Send default notification rapidly to screen.
 
 ```python
 import toasted as ts
@@ -22,6 +23,9 @@ reminder_toast.send()
 
 ![image](https://github.com/MekJohn/toasted/blob/main/test/Incoming_call.png)
 
+
+### Builder mode
+Build your own xml tree document, self-checked structure, as you want.
 
 ```python
 import toasted as ts
