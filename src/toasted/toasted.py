@@ -121,11 +121,14 @@ class Element(xe.Element):
 class Tree(xe.ElementTree):
 
     def __init__(self, source = None):
-        winXml = wx.XmlElement, wx.XmlDocument
+
+        WXMLs = wx.XmlElement, wx.XmlDocument
+
+
         if isinstance(source, Element):
             super().__init__(source)
-        elif isinstance(source, winXml):
-            tree = winXml.get_xml()
+        elif isinstance(source, WXMLs):
+            tree = WXMLs.get_xml()
             super().__init__(tree)
         elif isinstance(source, str):
             is_xml = os.path.splitext(source)[1] in (".xml", ".txt")
@@ -162,6 +165,7 @@ class Tree(xe.ElementTree):
         """
         return self.getroot()
 
+
     @classmethod
     def fromstring(cls, string: str):
         tree: Element = Element.fromstring(string)
@@ -183,28 +187,31 @@ class Tree(xe.ElementTree):
         node.set(key, value)
         return node
 
-    def descend(self, xpath: str):
-        parent_xpath = xpath.rsplit("/", 1)[0]
-        # element = self.find(xpath)
-        # parent = self.find(parent_xpath)
-        # child = element.copy()
-        # parent.remove(child)
-        return parent_xpath
-
-
-
-    def delete(self, xpath: str, *only: int):
+    def insert(self, index: str, xpath: str):
         """
-        Delete children nodes
+        Move node in the same parent node. Same notation of Element class
         """
-        nodes = self.findall(xpath)
-        trash = list()
-        for i, node in enumerate(nodes):
-            # delete only indicated nodes
-            if i in only or only == []:
-                trash.append(node.copy())
-                self.root.remove(node)
-        return trash
+        parent = self.find(xpath.rsplit("/", 1)[0])
+        # copy node deleting it from the tree
+        node = self.find(xpath)
+        parent.remove(node)
+        # re-inserting the element in the parent node
+        parent.insert(index, node)
+        return parent
+
+
+    # def delete(self, xpath: str, *only: int):
+    #     """
+    #     Delete children nodes
+    #     """
+    #     nodes = self.findall(xpath)
+    #     trash = list()
+    #     for i, node in enumerate(nodes):
+    #         # delete only indicated nodes
+    #         if i in only or only == []:
+    #             trash.append(node.copy())
+    #             self.root.remove(node)
+    #     return trash
 
 
 
@@ -382,9 +389,10 @@ class Toast:
     def __init__(self, document = None, app_id: str = "Python"):
         # init the main document content
         # TODO init should be manage simple empty tree
-        # TODO init shold be manage the correct order of nodes:
-        #       - all input should be placed before all action
-        self.xml = document if isinstance(document, Tree) else Tree("toast")
+        xmltree = Toast.sequenced(document) if isinstance(document, Tree) else Tree("toast")
+        self.xml = xmltree
+
+
 
         # default toast settings functionality
         self.xml.set(self.ROOT, "launch", "http:")
@@ -484,18 +492,110 @@ class Toast:
         # return raw contents
         return notification, user_args, user_inputs
 
+
+
     @staticmethod
-    def Section(tag: str, **attributes) -> Element:
-        section = Element(tag, **attributes)
+    def sequenced(xml: Tree):
+        """
+        Check and dispose correctly elements in the xml tree.
+        Some rule:
+            1. in 'actions' node all 'input' child noded should be placed before all 'action' child nodes
+        """
+        # 1. input first
+        actions_nodes = sorted(xml.findall("actions/"), key = lambda x: x.tag, reverse=True)
+        # get actions node with its attributes and text
+        actions = xml.find("actions")
+        actions_attr = actions.attrib
+        actions_text = actions.text
+        # init actions node restoring attributes and text
+        actions.clear()
+        actions.attrib = actions_attr
+        actions.text = actions_text
+        # fill actions node with ordered 'input' and 'action'
+        for action in actions_nodes:
+            actions.append(action)
+        return xml
+
+
+
+
+    @staticmethod
+    def Event(event: object):
+        # TODO deve gestire gli eventi
+        # notification prò essere attivato, dismesso ecc mediante apposito suoi metodi
+        # ToastActivatedEventArgs._from(...) inizializza la classe omonima e setta i metodi
+        # 'arguments' che contiene la sorgente e 'user_input' che contiene i valori
+        # che contengono i dati, mentre
+        # la lambda restituisce una wf.EventRegistrationToken (?)
+        # questi metodi
+        return
+
+
+    def header(self, id_number: int = 0, title = ""):
+        """
+        Used to group notifications under headers within Notification Center.
+        """
+        idn = f"{id_number:0>4}"
+        self.xml.set("id", idn)
+        self.xml.set("title", title)
+        self.xml.set("arguments", f"action=openConversation&amp;id={idn}")
+        return True
+
+    @staticmethod
+    def check_platform():
+        """
+        Determine wheter or not the system is capable to send toast notification
+        """
+        # compatibility
+        MIN_WIN_BUILD = 10240
+        # check to platform info
+        platform = pt.system()
+        build = pt.version()
+        check = False
+        # determine the capability
+        if platform == "Windows":
+            build_number = int(build.split(".")[2])
+            check = True if build_number >= MIN_WIN_BUILD else False
+        return check
+
+
+
+    def timestamp(self, datetime: str = "", timezone: str = "+00:00") -> dt.datetime:
+        """
+        Set the timestamp of the toast.
+        Keep and set time in UTC, Win will takes care to convert in local time.
+
+        Format:     YYYY-MM-DD HH:MM:SS
+        Example:    2024-06-25 11:02:54
+        """
+        # TODO date appear instead time if recent
+        time = dt.datetime.now() if datetime == "" else dt.datetime.fromisoformat(datetime)
+        stamp = time.strftime("%Y-%m-%dT%H:%M:%S") + timezone
+        self.xml.set(self.ROOT, "displayTimestamp", stamp)
+        return time
+
+
+    @staticmethod
+    def Section(tag: str, text: str = "", **attributes) -> Element:
+        """
+        Create custom toast node
+        """
+        section = Element(tag, text=text, **attributes)
         return section
 
     @staticmethod
     def Visual(**attributes) -> Element:
+        """
+        Init the main node 'visual'
+        """
         visual = Toast.Section("visual", **attributes)
         return visual
 
     @staticmethod
     def Binding(*elements: Element, **attributes) -> Element:
+        """
+        Init the main node 'binding'
+        """
         binding = Toast.Section("binding", **attributes)
         binding.set("template", "ToastGeneric")
         binding.extend(elements)
@@ -503,6 +603,9 @@ class Toast:
 
     @staticmethod
     def Actions(*elements: Element, **attributes) -> Element:
+        """
+        Init the main node 'actions'
+        """
         actions = Toast.Section("actions", **attributes)
         actions.extend(elements)
         return actions
@@ -510,7 +613,7 @@ class Toast:
     @staticmethod
     def Audio(source: str, loop: bool = False, silent: bool = False) -> Element:
         """
-        Create the xml Audio element for the toast.
+        Create the main node 'audio'
 
         Parameters
         ----------
@@ -550,63 +653,6 @@ class Toast:
             audio.set("silent", "true")
         return audio
 
-
-
-    @staticmethod
-    def Event(event: object):
-        # TODO deve gestire gli eventi
-        # notification prò essere attivato, dismesso ecc mediante apposito suoi metodi
-        # ToastActivatedEventArgs._from(...) inizializza la classe omonima e setta i metodi
-        # 'arguments' che contiene la sorgente e 'user_input' che contiene i valori
-        # che contengono i dati, mentre
-        # la lambda restituisce una wf.EventRegistrationToken (?)
-        # questi metodi
-        return
-
-
-    def header(self, id_number: int = 0, title = ""):
-        """
-        Used to group notifications under headers within Notification Center.
-        """
-        idn = f"{id_number:0>4}"
-        self.xml.set("id", idn)
-        self.xml.set("title", title)
-        self.xml.set("arguments", f"action=openConversation&amp;id={idn}")
-        return True
-
-    @staticmethod
-    def is_toast_compatible():
-        """
-        Determine wheter or not the system is capable to send toast notification
-        """
-        # compatibility
-        MIN_WIN_BUILD = 10240
-        # check to platform info
-        platform = pt.system()
-        build = pt.version()
-        check = False
-        # determine the capability
-        if platform == "Windows":
-            build_number = int(build.split(".")[2])
-            check = True if build_number >= MIN_WIN_BUILD else False
-        return check
-
-
-
-    def timestamp(self, datetime: str = "", timezone: str = "+00:00") -> dt.datetime:
-        """
-        Set the timestamp of the toast.
-        Keep and set time in UTC, Win will takes care to convert in local time.
-
-        Format:     YYYY-MM-DD HH:MM:SS
-        Example:    2024-06-25 11:02:54
-        """
-        time = dt.datetime.now() if datetime == "" else dt.datetime.fromisoformat(datetime)
-        stamp = time.strftime("%Y-%m-%dT%H:%M:%S") + timezone
-        self.xml.set(self.ROOT, "displayTimestamp", stamp)
-        return time
-
-
     @staticmethod
     def SubGroup(*elements: Element) -> Element:
         """
@@ -628,7 +674,7 @@ class Toast:
         return group
 
     @staticmethod
-    def Text(text: str, rich: bool = True,
+    def Text(txt: str, rich: bool = True,
              align: str = "default", style: str = "default", minline: int = 1, maxline: int = 2,
              attribution: bool = False, **attributes):
         """
@@ -678,7 +724,7 @@ class Toast:
         More on:    learn.microsoft.com/en-us/windows/apps/design/
                     shell/tiles-and-notifications/toast-schema#adaptivetext
         """
-        text = Element("text", text=text, **attributes)
+        text = Toast.Section("text", text=txt, **attributes)
         # attribution text type
         if attribution is True:
             text.set("placement", "attribution")
@@ -744,14 +790,10 @@ class Toast:
         return dismiss
 
 
-
     @staticmethod
     def Link(tag, attribute):
         hint = "hint-" + f"{tag.lower()}{attribute.title()}"
         return hint
-
-
-
 
     @staticmethod
     def Context(command: str) -> Element:
@@ -916,23 +958,26 @@ class Toast:
     def IncomingCall(cls):
         # TODO non funziona benissimo come nel sito
         toast = Element("toast", scenario="incomingCall")
-        path = r"C:\Users\gaudi\Desktop\projects\refinery\src\gui\image_png.png"
+        path = r"C:\Users\gaudi\Desktop\projects\refinery\src\gui\img.png"
         # visual section
-        visual = Element("visual")
+        visual = Toast.Visual()
+        actions = Toast.Actions()
+        binding = Toast.Binding()
         # binging section
-        binding = Element("binding", template="ToastGeneric")
-        text_name = Element("text", text="Andrew Bares", **{"hint-callScenarioCenterAlign": "true"})
-        text_info = Element("text", text="incoming call - mobile", **{"hint-callScenarioCenterAlign": "true"})
-        image = Toast.Image(path, rounded=True)
+        attr = {"hint-callScenarioCenterAlign": "true"}
+        text_name = Toast.Text("Andrew Bares", **attr)
+        text_info = Toast.Text("incoming call - mobile", **attr)
+        image = Toast.Image(path)
+        # action subnodes
+        camera_img = r"C:\Users\gaudi\Desktop\projects\tosted\camera.png"
+        rem_img = r"C:\Users\gaudi\Desktop\projects\tosted\reminder.png"
+        reply = Toast.Button("", icon=camera_img, color="green", tip="Answer to Video Call")
+        reminder = Toast.Button("", icon=rem_img, color="red", tip="Remind me later")
+        answer = Toast.Button("Ignore")
+        # compose the tree
         binding.extend([text_name, text_info, image])
         visual.append(binding)
-        # action section
-        actions = Element("actions")
-        reply = Toast.Button('Reply')
-        reminder = Toast.Button('Reminder')
-        answer = Toast.Button('Ignore')
         actions.extend([reply, reminder, answer])
-
         toast.extend([visual, actions])
         tree = Tree(toast)
         return cls(tree)
@@ -1055,11 +1100,12 @@ binding.extend([text1, text2, image])
 visual.append(binding)
 toast.append(audio)
 toast.append(visual)
+
+actions.append(sel)
 actions.append(inp)
+
+
 actions.append(menu)
-
-
-#actions.append(sel)
 actions.append(butt)
 actions.append(butt2)
 actions.append(butt3)
@@ -1071,9 +1117,6 @@ xml = Tree(toast)
 
 t = Toast(xml)
 a = Toast.IncomingCall()
+a.send()
 b = Toast.Reminder()
 # TODO b esce testo non richiesto
-
-xml = str(t.xml)
-
-elem = Element.fromstring(xml)
