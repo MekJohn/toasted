@@ -20,6 +20,6 @@ reminder_toast.send()
 
 ```
 
-![image]("src/tosted/test/Incoming_call.png")
+![image](https://github.com/MekJohn/toasted/blob/main/test/Incoming_call.png)
 
 
