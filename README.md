@@ -72,4 +72,32 @@ t.send()
 
 ![image](https://github.com/MekJohn/toasted/blob/main/test/meeting.png)
 
+```python
+print(t)
+
+# OUTPUT
+<toast launch="http:" activationType="protocol" displayTimestamp="2024-05-06T22:52:58+00:00" useButtonStyle="true">
+  <audio src="ms-winsoundevent:Notification.Looping.Alarm3" />
+  <visual>
+    <binding template="ToastGeneric">
+      <text hint-align="default" hint-style="default" hint-minLines="1">Conf Room 2001 / Building 135</text>
+      <text hint-align="default" hint-style="default" hint-minLines="1">10:00 AM - 10:30 AM</text>
+      <image src="C:\Users\gaudi\Desktop\projects\tosted\img.png" placement="appLogoOverride" hint-crop="circle" />
+    </binding>
+  </visual>
+  <actions>
+    <input type="selection" id="SelectionBox" activationType="protocol" arguments="http:SelectionBox" title="Send Invitation" defaultInput="0">
+      <selection id="0" content="John" />
+      <selection id="1" content="Frank" />
+      <selection id="2" content="Robert" />
+    </input>
+    <input type="text" id="textBox" activationType="protocol" arguments="http:textBox" placeHolderContent="Choose one option" />
+    <action activationType="protocol" arguments="http:Premi per uscire" placement="contextMenu" content="Premi per uscire" />
+    <action activationType="protocol" content="Ok" arguments="http:Ok" hint-toolTip="clicca" hint-inputId="ins2" />
+    <action activationType="protocol" content="Send" arguments="http:Send" hint-toolTip="send" hint-buttonStyle="Success" />
+    <action activationType="protocol" content="Cancel" arguments="http:Cancel" hint-toolTip="clicca" hint-buttonStyle="Critical" />
+  </actions>
+</toast>
+```
+
 
