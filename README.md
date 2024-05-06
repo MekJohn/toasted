@@ -76,6 +76,10 @@ t.send()
 
 ![image](https://github.com/MekJohn/toasted/blob/main/test/meeting.png)
 
+
+## Easy xml console representation
+Indented structure representation for checking it on the fly
+
 ```python
 print(t)
 
