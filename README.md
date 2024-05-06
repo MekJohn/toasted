@@ -13,7 +13,7 @@ pip install toasted
 ### Fast toast
 
 ```python
-import toastes as ts
+import toasted as ts
 
 reminder_toast = ts.Reminder("Hi. Please call me")
 reminder_toast.send()
@@ -24,30 +24,30 @@ reminder_toast.send()
 
 
 ```python
-import toastes as ts
+import toasted as ts
 
 # create main nodes
 toast = Element("toast")
-visual = Toast.Visual()
-binding = Toast.Binding()
-actions = Toast.Actions()
-audio = Toast.Audio("alarm3")
+visual = ts.Visual()
+binding = ts.Binding()
+actions = ts.Actions()
+audio = ts.Audio("alarm3")
 
 # generate 'visual' sub nodes
-text1 = Toast.Text("Conf Room 2001 / Building 135")
-text2 = Toast.Text("10:00 AM - 10:30 AM")
-image = Toast.Image(r"myfolder\img.png", position="logo", rounded=True)
+text1 = ts.Text("Conf Room 2001 / Building 135")
+text2 = ts.Text("10:00 AM - 10:30 AM")
+image = ts.Image(r"myfolder\img.png", position="logo", rounded=True)
 
 # generate 'actions' sub nodes
 ## input type
-sel = Toast.SelectionBox("John", "Frank", "Robert", label="Send Invitation")
-inp = Toast.InputBox("textBox", placeholder="Choose one option")
+sel = ts.SelectionBox("John", "Frank", "Robert", label="Send Invitation")
+inp = ts.InputBox("textBox", placeholder="Choose one option")
 ## button type
-butt = Toast.Button("Ok", tip="clicca", inputbox="ins2")
-butt2 = Toast.Button("Send", tip="send", color="g")
-butt3 = Toast.Button("Cancel", tip="clicca", color="r")
+butt = ts.Button("Ok", tip="clicca", inputbox="ins2")
+butt2 = ts.Button("Send", tip="send", color="g")
+butt3 = ts.Button("Cancel", tip="clicca", color="r")
 # context type
-menu = Toast.Context("Premi per uscire")
+menu = ts.Context("Premi per uscire")
 
 # adding sub nodes to main tree node
 binding.extend([text1, text2, image])
