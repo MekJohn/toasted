@@ -1087,13 +1087,13 @@ source = r"C:\Users\gaudi\Desktop\projects\tosted\img.png"
 image = Toast.Image(source, position="appLogoOverride", rounded=True)
 
 actions = Toast.Actions()
-inp = Toast.InputBox("textBox")
+inp = Toast.InputBox("textBox", placeholder="Choose one option")
 menu = Toast.Context("Premi per uscire")
 butt = Toast.Button("Ok", tip="clicca", inputbox="ins2")
 butt2 = Toast.Button("Send", tip="send", color="g")
 butt3 = Toast.Button("Cancel", tip="clicca", color="r")
 
-sel = Toast.SelectionBox("uno", "due")
+sel = Toast.SelectionBox("John", "Frank", "Robert", label="Send Invitation")
 audio = Toast.Audio("alarm3")
 
 binding.extend([text1, text2, image])
@@ -1116,7 +1116,7 @@ toast.append(actions)
 xml = Tree(toast)
 
 t = Toast(xml)
+t.send()
 a = Toast.IncomingCall()
-a.send()
 b = Toast.Reminder()
 # TODO b esce testo non richiesto
