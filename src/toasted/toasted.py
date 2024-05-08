@@ -389,7 +389,7 @@ class Toast:
     def __init__(self, document = None, app_id: str = "Python"):
         # init the main document content
         # TODO init should be manage simple empty tree
-        xmltree = Toast.sequenced(document) if isinstance(document, Tree) else Tree("toast")
+        xmltree = Toast.correct(document) if isinstance(document, Tree) else Tree("toast")
         self.xml = xmltree
 
 
@@ -399,7 +399,6 @@ class Toast:
         self.xml.set(self.ROOT, "activationType", "protocol")
         self.timestamp()
 
-        self.xml.set(self.ROOT, "useButtonStyle", "true")
         # self.xml.set("scenario", "incomingCall") # fa una breve musichetta tipo suoneria
 
         self.id = 0             # id number is needed when you want to group similar toasts
@@ -441,6 +440,39 @@ class Toast:
         Get actions element
         """
         return self.xml.find("./actions")
+
+    @property
+    def buttons(self):
+        """
+        Get buttons element
+        """
+        button_list = list()
+        for action in self.actions:
+            if "type" not in action.attrib.keys():
+                button_list.append(action)
+        return button_list
+
+    @property
+    def inputboxes(self):
+        """
+        Get inputboxes element
+        """
+        input_list = list()
+        for action in self.actions:
+            if action.attrib.get("type") == "text":
+                input_list.append(action)
+        return input_list
+
+    @property
+    def selectionboxes(self):
+        """
+        Get selectionboxes element
+        """
+        selection_list = list()
+        for action in self.actions:
+            if action.attrib.get("type") == "selection":
+                selection_list.append(action)
+        return selection_list
 
 
     @property
@@ -495,13 +527,14 @@ class Toast:
 
 
     @staticmethod
-    def sequenced(xml: Tree):
+    def correct(xml: Tree):
         """
         Check and dispose correctly elements in the xml tree.
         Some rule:
             1. in 'actions' node all 'input' child noded should be placed before all 'action' child nodes
         """
-        # 1. input first
+        # 1. NODES MANDATORY SEQUENCE
+        # 1.1 input first
         actions_nodes = sorted(xml.findall("actions/"), key = lambda x: x.tag, reverse=True)
         # get actions node with its attributes and text
         actions = xml.find("actions")
@@ -514,6 +547,15 @@ class Toast:
         # fill actions node with ordered 'input' and 'action'
         for action in actions_nodes:
             actions.append(action)
+        # 2. SCENARIOS RULES
+        # 2.1 in the incomingCall scenario toasts cannot use the colored buttons
+        root_node = xml.root
+        if root_node.attrib.get("scenario", None) == "incomingCall":
+            # delete attribute for colored buttons if any
+            if "useButtonStyle" in root_node.attrib.keys():
+                del root_node.attrib["useButtonStyle"]
+        else:
+            xml.set("./", "useButtonStyle", "true")
         return xml
 
 
@@ -530,16 +572,6 @@ class Toast:
         # questi metodi
         return
 
-
-    def header(self, id_number: int = 0, title = ""):
-        """
-        Used to group notifications under headers within Notification Center.
-        """
-        idn = f"{id_number:0>4}"
-        self.xml.set("id", idn)
-        self.xml.set("title", title)
-        self.xml.set("arguments", f"action=openConversation&amp;id={idn}")
-        return True
 
     @staticmethod
     def check_platform():
@@ -582,6 +614,8 @@ class Toast:
         """
         section = Element(tag, text=text, **attributes)
         return section
+
+
 
     @staticmethod
     def Visual(**attributes) -> Element:
@@ -654,13 +688,19 @@ class Toast:
         return audio
 
     @staticmethod
-    def SubGroup(*elements: Element) -> Element:
+    def Subgroup(*elements: Element, stacking: str = None, weight: int = 1) -> Element:
         """
         Specifies vertical columns that can contain text and images.
+        Subgroup are stackable:
+            - bottom
+            -
         """
-        column = Element("subgroup")
-        column.extend(elements)
-        return column
+        subgroup = Element("subgroup")
+        subgroup.set("hint-weight", str(weight))
+        if stacking is not None:
+            subgroup.set("hint-textStacking", stacking)
+        subgroup.extend(elements)
+        return subgroup
 
     @staticmethod
     def Group(*subgroups: Element) -> Element:
@@ -672,6 +712,19 @@ class Toast:
         group = Element("group")
         group.extend(subgroups)
         return group
+
+    @staticmethod
+    def Header(headerid: int = 0, title = "", **attributes) -> Element:
+        """
+        Used to group notifications under headers in the Notification Center.
+        """
+        title = title if title != "" else "Python"
+        header = Element("header", **attributes)
+        header.set("activationType", "protocol")
+        header.set("id", f"{headerid:0>4}")
+        header.set("title", title)
+        header.set("arguments", "returned_arguments")
+        return header
 
     @staticmethod
     def Text(txt: str, rich: bool = True,
@@ -699,23 +752,29 @@ class Toast:
 
         style:                  Only with 'rich' set to True
             default:            Default value. Style is determined by the renderer.
-            caption:            Smaller than paragraph font size.
-            captionSubtle:      Same as Caption but with subtle opacity.
+
+            header:             H1 font size.
+            headerSubtle:       Same as Header but with subtle opacity.
+            headerNumeral:      Same as Header but with top/bottom padding removed.
+
+            subheader:          H2 font size.
+            subheaderSubtle:    Same as Subheader but with subtle opacity.
+            subheaderNumeral	Same as Subheader but with top/bottom padding removed.
+
+            title:              H3 font size.
+            titleSubtle:        Same as Title but with subtle opacity.
+            titleNumeral:       Same as Title but with top/bottom padding removed.
+
+            subtitle:           H4 font size.
+            subtitleSubtle:     Same as Subtitle but with subtle opacity.
+
             body:               Paragraph font size.
             bodySubtle:         Same as Body but with subtle opacity.
             base:               Paragraph font size, bold weight. Essentially the bold version of Body.
             baseSubtle:         Same as Base but with subtle opacity.
-            subtitle:           H4 font size.
-            subtitleSubtle:     Same as Subtitle but with subtle opacity.
-            title:              H3 font size.
-            titleSubtle:        Same as Title but with subtle opacity.
-            titleNumeral:       Same as Title but with top/bottom padding removed.
-            subheader:          H2 font size.
-            subheaderSubtle:    Same as Subheader but with subtle opacity.
-            subheaderNumeral	Same as Subheader but with top/bottom padding removed.
-            header:             H1 font size.
-            headerSubtle:       Same as Header but with subtle opacity.
-            headerNumeral:      Same as Header but with top/bottom padding removed.
+
+            caption:            Smaller than paragraph font size.
+            captionSubtle:      Same as Caption but with subtle opacity.
 
         -- attributes --
         placement:
@@ -808,7 +867,7 @@ class Toast:
         return menu
 
     @staticmethod
-    def Image(source: str, position: str = None, rounded: bool = None) -> Element:
+    def Image(source: str, position: str = None, rounded: bool = None, remove_margin: bool = True) -> Element:
         """
 
         By default, images are displayed inline, after any text elements, filling the full
@@ -860,13 +919,16 @@ class Toast:
         # create element and set default attributes
         image = Element("image")
         image.set("src", source)
+        # remove empty image margin if required
+        if remove_margin is True:
+            image.set("hint-removeMargin", "true")
         # set image type
         if position == "hero":
             image.set("placement", "hero")
         elif position in ("logo", "appLogoOverride"):
             image.set("placement", "appLogoOverride")
-            if rounded is True:
-                image.set("hint-crop", "circle")
+        if rounded is True:
+            image.set("hint-crop", "circle")
         return image
 
 
@@ -919,7 +981,8 @@ class Toast:
 
 
     @classmethod
-    def Reminder(cls, title: str = "Reminder", text = "Don't forget about it."):
+    def Reminder(cls, title: str = "Reminder", subject: str = "Task Overdue",
+                 text = "Don't forget about it. We need it asap."):
         """
         In the reminder scenario, the notification will stay on screen until the
         user dismisses it or takes action. A reminder sound will be played.
@@ -931,11 +994,14 @@ class Toast:
         visual = Toast.Visual()
         # binging section
         binding = Toast.Binding()
-        title = Toast.Text(title, **{"hint-align": "center"})
-        place = Toast.Text(text, **{"hint-align": "center"})
-        subgroup = Toast.SubGroup(title, place)
+        title = Toast.Text("📣 " + title)  # this text node is mandatory for Win
+
+        subject = Toast.Text(subject, style="subtitle", align="center")
+        place = Toast.Text(text, style="body", align="center")
+        subgroup = Toast.Subgroup(subject, place)
         group = Toast.Group(subgroup)
-        binding.append(group)
+
+        binding.extend([title, group])
         visual.append(binding)
         # actions section
         actions = Toast.Actions()
@@ -958,27 +1024,35 @@ class Toast:
     def IncomingCall(cls):
         # TODO non funziona benissimo come nel sito
         toast = Element("toast", scenario="incomingCall")
-        path = r"C:\Users\gaudi\Desktop\projects\refinery\src\gui\img.png"
+        path = r"C:\Users\gaudi\Desktop\projects\tosted\img.png"
         # visual section
+        audio = Toast.Audio(Audio.Call(), loop= True)
         visual = Toast.Visual()
         actions = Toast.Actions()
         binding = Toast.Binding()
         # binging section
-        attr = {"hint-callScenarioCenterAlign": "true"}
-        text_name = Toast.Text("Andrew Bares", **attr)
-        text_info = Toast.Text("incoming call - mobile", **attr)
-        image = Toast.Image(path)
+        # attr = {"hint-callScenarioCenterAlign": "true"}
+        group = Toast.Group()
+        subgroup = Toast.Subgroup()
+        title = Toast.Text("☏  " + "Incoming Call")
+        text_name = Toast.Text("Andrew Bares", align="center")
+        text_info = Toast.Text("mobile", align="center")
+        image = Toast.Image(path, rounded=True)
+        subgroup.extend([text_name, text_info])
+        group.append(subgroup)
         # action subnodes
         camera_img = r"C:\Users\gaudi\Desktop\projects\tosted\camera.png"
         rem_img = r"C:\Users\gaudi\Desktop\projects\tosted\reminder.png"
-        reply = Toast.Button("", icon=camera_img, color="green", tip="Answer to Video Call")
-        reminder = Toast.Button("", icon=rem_img, color="red", tip="Remind me later")
-        answer = Toast.Button("Ignore")
+
+        reply = Toast.Button("", icon=rem_img, color="red", tip="Close and send message")
+        remind = Toast.Button("", icon=rem_img, color="red", tip="Close and remind me later")
+        ignore = Toast.Button("Ignore")
+        answer = Toast.Button("", icon=camera_img, color="green", tip="Answer to Video Call")
         # compose the tree
-        binding.extend([text_name, text_info, image])
+        binding.extend([title, group, image])
         visual.append(binding)
-        actions.extend([reply, reminder, answer])
-        toast.extend([visual, actions])
+        actions.extend([reply, remind, ignore, answer])
+        toast.extend([audio, visual, actions])
         tree = Tree(toast)
         return cls(tree)
 
@@ -1077,6 +1151,7 @@ class Toast:
 
 
 toast = Element("toast")
+header = Toast.Header("8729", title="App")
 visual = Toast.Visual()
 binding = Toast.Binding()
 
@@ -1098,12 +1173,13 @@ audio = Toast.Audio("alarm3")
 
 binding.extend([text1, text2, image])
 visual.append(binding)
+
+toast.append(header)
 toast.append(audio)
 toast.append(visual)
 
 actions.append(sel)
 actions.append(inp)
-
 
 actions.append(menu)
 actions.append(butt)
@@ -1116,7 +1192,9 @@ toast.append(actions)
 xml = Tree(toast)
 
 t = Toast(xml)
-t.send()
-a = Toast.IncomingCall()
-b = Toast.Reminder()
+
+call = Toast.IncomingCall()
+call.send()
+
+rem = Toast.Reminder()
 # TODO b esce testo non richiesto

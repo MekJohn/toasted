@@ -108,4 +108,16 @@ print(t)
 </toast>
 ```
 
+## Main toast
+A ready-to-use toasts collection.
+
+```python
+reminder = Toast.Reminder()
+reminder.send()
+```
+
+![image](https://github.com/MekJohn/toasted/blob/main/test/reminder.png)
+
+
+
 
