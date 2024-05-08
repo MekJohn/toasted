@@ -116,6 +116,11 @@ reminder = Toast.Reminder()
 reminder.send()
 ```
 
+```python
+videocall = Toast.IncomingCall()
+videocall.send()
+```
+
 ![image](https://github.com/MekJohn/toasted/blob/main/test/reminder.png)
 ![image](https://github.com/MekJohn/toasted/blob/main/test/call.png)
 
