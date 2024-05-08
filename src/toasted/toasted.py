@@ -1041,13 +1041,14 @@ class Toast:
         subgroup.extend([text_name, text_info])
         group.append(subgroup)
         # action subnodes
-        camera_img = r"C:\Users\gaudi\Desktop\projects\tosted\camera.png"
-        rem_img = r"C:\Users\gaudi\Desktop\projects\tosted\reminder.png"
+        rep_icon = r"C:\Users\gaudi\Desktop\projects\tosted\chat.png"
+        cam_icon = r"C:\Users\gaudi\Desktop\projects\tosted\camera.png"
+        rem_icon = r"C:\Users\gaudi\Desktop\projects\tosted\reminder.png"
 
-        reply = Toast.Button("", icon=rem_img, color="red", tip="Close and send message")
-        remind = Toast.Button("", icon=rem_img, color="red", tip="Close and remind me later")
+        reply = Toast.Button("", icon=rep_icon, color="red", tip="Close and send message")
+        remind = Toast.Button("", icon=rem_icon, color="red", tip="Close and remind me later")
         ignore = Toast.Button("Ignore")
-        answer = Toast.Button("", icon=camera_img, color="green", tip="Answer to Video Call")
+        answer = Toast.Button("", icon=cam_icon, color="green", tip="Answer to Video Call")
         # compose the tree
         binding.extend([title, group, image])
         visual.append(binding)

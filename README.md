@@ -117,6 +117,7 @@ reminder.send()
 ```
 
 ![image](https://github.com/MekJohn/toasted/blob/main/test/reminder.png)
+![image](https://github.com/MekJohn/toasted/blob/main/test/call.png)
 
 
 
