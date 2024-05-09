@@ -1198,4 +1198,3 @@ call = Toast.IncomingCall()
 call.send()
 
 rem = Toast.Reminder()
-# TODO b esce testo non richiesto
