@@ -1024,7 +1024,7 @@ class Toast:
     def IncomingCall(cls):
         # TODO non funziona benissimo come nel sito
         toast = Element("toast", scenario="incomingCall")
-        path = r"C:\Users\gaudi\Desktop\projects\tosted\img.png"
+        path = r"img.png"
         # visual section
         audio = Toast.Audio(Audio.Call(), loop= True)
         visual = Toast.Visual()
@@ -1041,9 +1041,9 @@ class Toast:
         subgroup.extend([text_name, text_info])
         group.append(subgroup)
         # action subnodes
-        rep_icon = r"C:\Users\gaudi\Desktop\projects\tosted\chat.png"
-        cam_icon = r"C:\Users\gaudi\Desktop\projects\tosted\camera.png"
-        rem_icon = r"C:\Users\gaudi\Desktop\projects\tosted\reminder.png"
+        rep_icon = r"chat.png"
+        cam_icon = r"camera.png"
+        rem_icon = r"reminder.png"
 
         reply = Toast.Button("", icon=rep_icon, color="red", tip="Close and send message")
         remind = Toast.Button("", icon=rem_icon, color="red", tip="Close and remind me later")
@@ -1159,7 +1159,7 @@ binding = Toast.Binding()
 text1 = Toast.Text("Conf Room 2001 / Building 135")
 text2 = Toast.Text("10:00 AM - 10:30 AM")
 
-source = r"C:\Users\gaudi\Desktop\projects\tosted\img.png"
+source = r"img.png"
 image = Toast.Image(source, position="appLogoOverride", rounded=True)
 
 actions = Toast.Actions()
