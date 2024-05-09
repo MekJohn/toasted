@@ -383,7 +383,7 @@ class Toast:
     DURATION_SHORT: str = "short" # 7 seconds
     DURATION_LONG: str = "long" # permanent
 
-
+    # TODO  spostate le icone
 
 
     def __init__(self, document = None, app_id: str = "Python"):
